@@ -94,6 +94,27 @@
             transform: scale(0.95);
         }
 
+        /* Vorlesen-Button */
+        .vorlesen-btn {
+            display: none;
+            margin-top: 15px;
+            background: none;
+            border: 2px solid #667eea;
+            color: #667eea;
+            padding: 10px 24px;
+            border-radius: 12px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            transition: transform 0.2s, background 0.2s;
+        }
+
+        .vorlesen-btn:active {
+            transform: scale(0.95);
+            background: rgba(102, 126, 234, 0.1);
+        }
+
         @media (pointer: coarse) {
             .touch-btn {
                 display: inline-block;
@@ -108,68 +129,48 @@
         <div class="deutsch" id="deutsch"></div>
         <div class="englisch" id="englisch"></div>
         <button class="touch-btn" id="touchBtn">Aufdecken</button>
+        <br>
+        <button class="vorlesen-btn" id="vorlesenBtn">&#128264; Nochmal anhören</button>
         <div class="hinweis" id="hinweis"></div>
     </div>
 
     <script>
-        /* ===== VOKABELLISTE ===== */
-        const vokabeln = [
-            /* Seite 52 - Way in */
-            { deutsch: "Regen", englisch: "rain" },
-            { deutsch: "hervorbringen, produzieren", englisch: "to produce" },
-            { deutsch: "Universität", englisch: "university" },
-            { deutsch: "Erfinder, Erfinderin", englisch: "inventor" },
-            { deutsch: "geboren werden", englisch: "to be born" },
-            { deutsch: "schottisch", englisch: "Scottish" },
-            { deutsch: "Held", englisch: "hero" },
-            { deutsch: "sein, ihr", englisch: "its" },
-            /* Seite 53 */
-            { deutsch: "Sonnen-, Solar-, solar", englisch: "solar" },
-            { deutsch: "Energie, Kraft, Macht", englisch: "power" },
-            { deutsch: "Strom, Elektrizität", englisch: "electricity" },
-            { deutsch: "Windpark", englisch: "wind farm" },
-            { deutsch: "See", englisch: "lake" },
-            { deutsch: "See (in Schottland)", englisch: "loch" },
-            { deutsch: "Häuschen", englisch: "cottage" },
-            { deutsch: "wild", englisch: "wild" },
-            { deutsch: "Tradition", englisch: "tradition" },
-            { deutsch: "Dudelsack", englisch: "bagpipes" },
-            { deutsch: "Schottenrock, Kilt", englisch: "kilt" },
-            { deutsch: "Art, Sorte", englisch: "kind" },
-            { deutsch: "Schotte, Schottin", englisch: "Scot" },
-            { deutsch: "Haferbrei", englisch: "porridge" },
-            { deutsch: "Hafer", englisch: "oat" },
-            { deutsch: "Windrad", englisch: "wind turbine" },
-            { deutsch: "schützen", englisch: "to protect" },
-            { deutsch: "Natur", englisch: "nature" },
-            { deutsch: "Ausstellung", englisch: "exhibition" },
-            /* Seite 54 */
-            { deutsch: "der, dem, den, die", englisch: "who" },
-            { deutsch: "verändern, (sich) ändern", englisch: "to change" },
-            { deutsch: "als", englisch: "as" },
-            { deutsch: "erfinden", englisch: "to invent" },
-            { deutsch: "Telefon", englisch: "telephone" },
-            { deutsch: "aufwachsen", englisch: "to grow up" },
-            { deutsch: "davor", englisch: "before that" },
-            { deutsch: "Ziel", englisch: "ambition" },
-            { deutsch: "Ehefrau", englisch: "wife" },
-            { deutsch: "beide", englisch: "both" },
-            { deutsch: "gehörlos, schwerhörig, taub", englisch: "deaf" },
-            { deutsch: "Sprache, Rede", englisch: "speech" },
-            { deutsch: "menschlich", englisch: "human" },
-            { deutsch: "die, der, dem, den, das", englisch: "which" },
-            { deutsch: "Kanada", englisch: "Canada" },
-            { deutsch: "USA (Vereinigte Staaten von Amerika)", englisch: "USA (United States of America)" },
-            { deutsch: "aufgeben", englisch: "to give up" },
-            { deutsch: "Erfindung", englisch: "invention" },
-        ];
-        /* ======================== */
-
+        let vokabeln = [];
         let aktuelleVokabel = 0;
         let aufgedeckt = false;
 
+        /* CSV-Datei vom Server laden */
+        async function ladeVokabeln() {
+            try {
+                const response = await fetch('vokabeln.csv');
+                if (!response.ok) throw new Error('Datei nicht gefunden');
+                const text = await response.text();
+
+                vokabeln = text.trim().split('\n')
+                    .map(zeile => zeile.trim())
+                    .filter(zeile => zeile.length > 0 && zeile.includes(';'))
+                    .map(zeile => {
+                        const [deutsch, englisch] = zeile.split(';').map(s => s.trim());
+                        return { deutsch, englisch };
+                    });
+
+                if (vokabeln.length === 0) {
+                    document.getElementById('deutsch').textContent = 'Keine Vokabeln gefunden';
+                    document.getElementById('hinweis').textContent = 'Bitte vokabeln.csv prüfen';
+                    return;
+                }
+
+                document.getElementById('counter').textContent = vokabeln.length + ' Vokabeln geladen';
+                zeigeVokabel();
+            } catch (err) {
+                document.getElementById('deutsch').textContent = 'Fehler beim Laden';
+                document.getElementById('hinweis').textContent = 'vokabeln.csv nicht gefunden';
+            }
+        }
+
         function zeigeVokabel() {
             document.getElementById('englisch').classList.remove('sichtbar');
+            document.getElementById('vorlesenBtn').style.display = 'none';
             document.getElementById('deutsch').textContent = vokabeln[aktuelleVokabel].deutsch;
             document.getElementById('englisch').textContent = vokabeln[aktuelleVokabel].englisch;
             document.getElementById('hinweis').textContent = 'Taste drücken oder tippen zum Aufdecken';
@@ -190,6 +191,7 @@
 
             if (!aufgedeckt) {
                 document.getElementById('englisch').classList.add('sichtbar');
+                document.getElementById('vorlesenBtn').style.display = 'inline-block';
                 vorlesen(vokabeln[aktuelleVokabel].englisch);
                 document.getElementById('hinweis').textContent = 'Nochmal für nächste Vokabel';
                 document.getElementById('touchBtn').textContent = 'Weiter';
@@ -202,7 +204,7 @@
 
         // Tastatur (PC)
         document.addEventListener('keydown', function (e) {
-            naechsteAktion();
+            if (vokabeln.length > 0) naechsteAktion();
         });
 
         // Touch-Button (iPhone)
@@ -211,7 +213,14 @@
             naechsteAktion();
         });
 
-        zeigeVokabel();
+        // Vorlesen-Button
+        document.getElementById('vorlesenBtn').addEventListener('click', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            vorlesen(vokabeln[aktuelleVokabel].englisch);
+        });
+
+        ladeVokabeln();
     </script>
 </body>
 </html>
