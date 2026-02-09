@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vokabeltrainer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 40px 50px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            min-width: 320px;
+            max-width: 90vw;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            color: #888;
+            margin-bottom: 30px;
+            font-weight: 400;
+        }
+
+        .deutsch {
+            font-size: 2.5rem;
+            color: #333;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        .englisch {
+            font-size: 2.5rem;
+            color: #667eea;
+            margin-bottom: 20px;
+            font-weight: 700;
+            min-height: 3.5rem;
+            opacity: 0;
+            visibility: hidden;
+            transition: none;
+        }
+
+        .englisch.sichtbar {
+            opacity: 1;
+            visibility: visible;
+            transition: opacity 0.4s ease;
+        }
+
+        .hinweis {
+            font-size: 1rem;
+            color: #aaa;
+            margin-top: 15px;
+        }
+
+        .counter {
+            font-size: 0.9rem;
+            color: #bbb;
+            margin-bottom: 10px;
+        }
+
+        /* Touch-Button fürs iPhone */
+        .touch-btn {
+            display: none;
+            margin-top: 25px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 16px 40px;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            cursor: pointer;
+            border: none;
+            user-select: none;
+            -webkit-user-select: none;
+            transition: transform 0.2s;
+        }
+
+        .touch-btn:active {
+            transform: scale(0.95);
+        }
+
+        @media (pointer: coarse) {
+            .touch-btn {
+                display: inline-block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Vokabeltrainer</h1>
+        <div class="counter" id="counter"></div>
+        <div class="deutsch" id="deutsch"></div>
+        <div class="englisch" id="englisch"></div>
+        <button class="touch-btn" id="touchBtn">Aufdecken</button>
+        <div class="hinweis" id="hinweis"></div>
+    </div>
+
+    <script>
+        /* ===== VOKABELLISTE ===== */
+        const vokabeln = [
+            /* Seite 52 - Way in */
+            { deutsch: "Regen", englisch: "rain" },
+            { deutsch: "hervorbringen, produzieren", englisch: "to produce" },
+            { deutsch: "Universität", englisch: "university" },
+            { deutsch: "Erfinder, Erfinderin", englisch: "inventor" },
+            { deutsch: "geboren werden", englisch: "to be born" },
+            { deutsch: "schottisch", englisch: "Scottish" },
+            { deutsch: "Held", englisch: "hero" },
+            { deutsch: "sein, ihr", englisch: "its" },
+            /* Seite 53 */
+            { deutsch: "Sonnen-, Solar-, solar", englisch: "solar" },
+            { deutsch: "Energie, Kraft, Macht", englisch: "power" },
+            { deutsch: "Strom, Elektrizität", englisch: "electricity" },
+            { deutsch: "Windpark", englisch: "wind farm" },
+            { deutsch: "See", englisch: "lake" },
+            { deutsch: "See (in Schottland)", englisch: "loch" },
+            { deutsch: "Häuschen", englisch: "cottage" },
+            { deutsch: "wild", englisch: "wild" },
+            { deutsch: "Tradition", englisch: "tradition" },
+            { deutsch: "Dudelsack", englisch: "bagpipes" },
+            { deutsch: "Schottenrock, Kilt", englisch: "kilt" },
+            { deutsch: "Art, Sorte", englisch: "kind" },
+            { deutsch: "Schotte, Schottin", englisch: "Scot" },
+            { deutsch: "Haferbrei", englisch: "porridge" },
+            { deutsch: "Hafer", englisch: "oat" },
+            { deutsch: "Windrad", englisch: "wind turbine" },
+            { deutsch: "schützen", englisch: "to protect" },
+            { deutsch: "Natur", englisch: "nature" },
+            { deutsch: "Ausstellung", englisch: "exhibition" },
+            /* Seite 54 */
+            { deutsch: "der, dem, den, die", englisch: "who" },
+            { deutsch: "verändern, (sich) ändern", englisch: "to change" },
+            { deutsch: "als", englisch: "as" },
+            { deutsch: "erfinden", englisch: "to invent" },
+            { deutsch: "Telefon", englisch: "telephone" },
+            { deutsch: "aufwachsen", englisch: "to grow up" },
+            { deutsch: "davor", englisch: "before that" },
+            { deutsch: "Ziel", englisch: "ambition" },
+            { deutsch: "Ehefrau", englisch: "wife" },
+            { deutsch: "beide", englisch: "both" },
+            { deutsch: "gehörlos, schwerhörig, taub", englisch: "deaf" },
+            { deutsch: "Sprache, Rede", englisch: "speech" },
+            { deutsch: "menschlich", englisch: "human" },
+            { deutsch: "die, der, dem, den, das", englisch: "which" },
+            { deutsch: "Kanada", englisch: "Canada" },
+            { deutsch: "USA (Vereinigte Staaten von Amerika)", englisch: "USA (United States of America)" },
+            { deutsch: "aufgeben", englisch: "to give up" },
+            { deutsch: "Erfindung", englisch: "invention" },
+        ];
+        /* ======================== */
+
+        let aktuelleVokabel = 0;
+        let aufgedeckt = false;
+
+        function zeigeVokabel() {
+            document.getElementById('englisch').classList.remove('sichtbar');
+            document.getElementById('deutsch').textContent = vokabeln[aktuelleVokabel].deutsch;
+            document.getElementById('englisch').textContent = vokabeln[aktuelleVokabel].englisch;
+            document.getElementById('hinweis').textContent = 'Taste drücken oder tippen zum Aufdecken';
+            document.getElementById('touchBtn').textContent = 'Aufdecken';
+            document.getElementById('counter').textContent = (aktuelleVokabel + 1) + ' / ' + vokabeln.length;
+            aufgedeckt = false;
+        }
+
+        function vorlesen(text) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            utterance.rate = 0.9;
+            speechSynthesis.speak(utterance);
+        }
+
+        function naechsteAktion() {
+            if (vokabeln.length === 0) return;
+
+            if (!aufgedeckt) {
+                document.getElementById('englisch').classList.add('sichtbar');
+                vorlesen(vokabeln[aktuelleVokabel].englisch);
+                document.getElementById('hinweis').textContent = 'Nochmal für nächste Vokabel';
+                document.getElementById('touchBtn').textContent = 'Weiter';
+                aufgedeckt = true;
+            } else {
+                aktuelleVokabel = (aktuelleVokabel + 1) % vokabeln.length;
+                zeigeVokabel();
+            }
+        }
+
+        // Tastatur (PC)
+        document.addEventListener('keydown', function (e) {
+            naechsteAktion();
+        });
+
+        // Touch-Button (iPhone)
+        document.getElementById('touchBtn').addEventListener('click', function (e) {
+            e.preventDefault();
+            naechsteAktion();
+        });
+
+        zeigeVokabel();
+    </script>
+</body>
+</html>
